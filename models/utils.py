@@ -6,6 +6,7 @@ from models.constants import CONST_TRANSFORMER_TOPOLOGICAL_ORDER
 from models.llama.modelings_alignable_llama import *
 from models.gpt2.modelings_alignable_gpt2 import *
 from models.gpt_neo.modelings_alignable_gpt_neo import *
+from models.mistral.modelings_alignable_mistral import *
 
 
 lsm = nn.LogSoftmax(dim=2)
@@ -36,6 +37,8 @@ type_to_module_mapping = {
     hf_models.llama.modeling_llama.LlamaForCausalLM: llama_lm_type_to_module_mapping,
     hf_models.gpt_neo.modeling_gpt_neo.GPTNeoModel: gpt_neo_type_to_module_mapping,
     hf_models.gpt_neo.modeling_gpt_neo.GPTNeoForCausalLM: gpt_neo_lm_type_to_module_mapping,
+    hf_models.mistral.modeling_mistral.MistralModel: mistral_type_to_module_mapping,
+    hf_models.mistral.modeling_mistral.MistralForCausalLM: mistral_lm_type_to_module_mapping,
     # new model type goes here after defining the model files
 }
 
@@ -47,6 +50,8 @@ type_to_dimension_mapping = {
     hf_models.llama.modeling_llama.LlamaForCausalLM: llama_lm_type_to_dimension_mapping,
     hf_models.gpt_neo.modeling_gpt_neo.GPTNeoModel: gpt_neo_type_to_dimension_mapping,
     hf_models.gpt_neo.modeling_gpt_neo.GPTNeoForCausalLM: gpt_neo_lm_type_to_dimension_mapping,
+    hf_models.mistral.modeling_mistral.MistralModel: mistral_type_to_dimension_mapping,
+    hf_models.mistral.modeling_mistral.MistralForCausalLM: mistral_lm_type_to_dimension_mapping,
     # new model type goes here after defining the model files
 }
 
@@ -58,6 +63,8 @@ output_to_subcomponent_fn_mapping = {
     hf_models.llama.modeling_llama.LlamaForCausalLM: llama_output_to_subcomponent,
     hf_models.gpt_neo.modeling_gpt_neo.GPTNeoModel: gpt_neo_output_to_subcomponent,
     hf_models.gpt_neo.modeling_gpt_neo.GPTNeoForCausalLM: gpt_neo_output_to_subcomponent,
+    hf_models.mistral.modeling_mistral.MistralModel: mistral_output_to_subcomponent,
+    hf_models.mistral.modeling_mistral.MistralForCausalLM: mistral_output_to_subcomponent,
     # new model type goes here after defining the model files
 }
 
@@ -69,6 +76,8 @@ scatter_intervention_output_fn_mapping = {
     hf_models.llama.modeling_llama.LlamaForCausalLM: llama_scatter_intervention_output,
     hf_models.gpt_neo.modeling_gpt_neo.GPTNeoModel: gpt_neo_scatter_intervention_output,
     hf_models.gpt_neo.modeling_gpt_neo.GPTNeoForCausalLM: gpt_neo_scatter_intervention_output,
+    hf_models.mistral.modeling_mistral.MistralModel: mistral_scatter_intervention_output,
+    hf_models.mistral.modeling_mistral.MistralForCausalLM: mistral_scatter_intervention_output,
     # new model type goes here after defining the model files
 }
 

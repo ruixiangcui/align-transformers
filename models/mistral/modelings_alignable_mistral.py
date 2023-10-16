@@ -18,7 +18,7 @@ import torch
 from models.constants import CONST_INPUT_HOOK, CONST_OUTPUT_HOOK, CONST_QKV_INDICES
 
 
-llama_type_to_module_mapping = {
+mistral_type_to_module_mapping = {
     'block_input': ("layers[%s]", CONST_INPUT_HOOK), 
     'block_output': ("layers[%s]", CONST_OUTPUT_HOOK), 
     'mlp_activation': ("layers[%s].mlp.act_fn", CONST_OUTPUT_HOOK), 
@@ -37,7 +37,7 @@ llama_type_to_module_mapping = {
 }
 
 
-llama_type_to_dimension_mapping = {
+mistral_type_to_dimension_mapping = {
     'block_input': ("config.hidden_size", ), 
     'block_output': ("config.hidden_size", ), 
     'mlp_activation': ("config.intermediate_size", ), 
@@ -56,13 +56,13 @@ llama_type_to_dimension_mapping = {
 }
 
 
-"""llama model with LM head"""
-llama_lm_type_to_module_mapping = {}
-for k, v in llama_type_to_module_mapping.items():
-    llama_lm_type_to_module_mapping[k] = (f"model.{v[0]}", v[1])
+"""mistral model with LM head"""
+mistral_lm_type_to_module_mapping = {}
+for k, v in mistral_type_to_module_mapping.items():
+    mistral_lm_type_to_module_mapping[k] = (f"model.{v[0]}", v[1])
 
 
-llama_lm_type_to_dimension_mapping = llama_type_to_dimension_mapping
+mistral_lm_type_to_dimension_mapping = mistral_type_to_dimension_mapping
 
 
 def split_heads(tensor, num_heads, attn_head_size):
@@ -74,21 +74,21 @@ def split_heads(tensor, num_heads, attn_head_size):
     return tensor.permute(0, 2, 1, 3)  # (batch, head, seq_length, head_features)
 
 
-def create_llama(name="sharpbai/alpaca-7b-merged", cache_dir="../../.huggingface_cache"):
+def create_mistral(name="Open-Orca/Mistral-7B-OpenOrca", cache_dir="./.huggingface_cache"):
     """Creates a LLaMA Causal LM model, config, and tokenizer from the given name and revision"""
-    from transformers import LlamaForCausalLM, LlamaTokenizer, LlamaConfig
+    from transformers import MistralForCausalLM, AutoTokenizer, MistralConfig
     
-    config = LlamaConfig.from_pretrained(name, cache_dir=cache_dir)
-    tokenizer = LlamaTokenizer.from_pretrained(name, cache_dir=cache_dir)
-    llama = LlamaForCausalLM.from_pretrained(
+    config = MistralConfig.from_pretrained(name, cache_dir=cache_dir)
+    tokenizer = AutoTokenizer.from_pretrained(name, cache_dir=cache_dir)
+    mistral = MistralForCausalLM.from_pretrained(
         name, config=config, cache_dir=cache_dir, 
         torch_dtype=torch.bfloat16 # save memory
     )
     print("loaded model")
-    return config, tokenizer, llama
+    return config, tokenizer, mistral
 
 
-def llama_output_to_subcomponent(
+def mistral_output_to_subcomponent(
     output, alignable_representation_type, model_config
 ):
     n_embd = model_config.hidden_size
@@ -103,7 +103,7 @@ def llama_output_to_subcomponent(
         return output
 
 
-def llama_scatter_intervention_output(
+def mistral_scatter_intervention_output(
     original_output, intervened_representation,
     alignable_representation_type,
     unit_locations, model_config
