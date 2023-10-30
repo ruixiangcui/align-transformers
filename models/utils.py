@@ -125,6 +125,7 @@ def print_forward_hooks(main_module):
             print(f"Module: {name if name else 'Main Module'}")
             for hook_id, hook in submodule._forward_pre_hooks.items():
                 print(f"  ID: {hook_id}, Hook: {hook}")
+<<<<<<< HEAD
 
 
 def remove_forward_hooks(main_module: nn.Module):
@@ -143,7 +144,26 @@ def remove_forward_hooks(main_module: nn.Module):
             for pre_hook_id in pre_hooks:
                 submodule._forward_pre_hooks.pop(pre_hook_id)
 
+=======
+                
+>>>>>>> origin/main
 
+def remove_forward_hooks(main_module: nn.Module):
+    """Function to remove all forward and pre-forward hooks from a module and its sub-modules."""
+    
+    # Remove forward hooks
+    for _, submodule in main_module.named_modules():
+        if hasattr(submodule, "_forward_hooks"):
+            hooks = list(submodule._forward_hooks.keys())  # Get a list of hook IDs
+            for hook_id in hooks:
+                submodule._forward_hooks.pop(hook_id)
+        
+        # Remove pre-forward hooks
+        if hasattr(submodule, "_forward_pre_hooks"):
+            pre_hooks = list(submodule._forward_pre_hooks.keys())  # Get a list of pre-hook IDs
+            for pre_hook_id in pre_hooks:
+                submodule._forward_pre_hooks.pop(pre_hook_id)
+                
 def set_seed(seed: int):
     """Set seed. Deprecate soon since it is in the huggingface library"""
     random.seed(seed)
