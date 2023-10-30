@@ -74,7 +74,7 @@ def split_heads(tensor, num_heads, attn_head_size):
     return tensor.permute(0, 2, 1, 3)  # (batch, head, seq_length, head_features)
 
 
-def create_mistral(name="Open-Orca/Mistral-7B-OpenOrca", cache_dir="./.huggingface_cache"):
+def create_mistral(name="Open-Orca/Mistral-7B-OpenOrca", cache_dir="../../.huggingface_cache"):
     """Creates a LLaMA Causal LM model, config, and tokenizer from the given name and revision"""
     from transformers import MistralForCausalLM, AutoTokenizer, MistralConfig
     

@@ -12,7 +12,6 @@ from models.mistral.modelings_alignable_mistral import *
 lsm = nn.LogSoftmax(dim=2)
 sm = nn.Softmax(dim=2)
 
-
 #########################################################################
 """
 Below are functions that you need to modify if you add
@@ -29,7 +28,6 @@ global type_to_dimension_mapping
 global output_to_subcomponent_fn_mapping
 global scatter_intervention_output_fn_mapping
 
-
 type_to_module_mapping = {
     hf_models.gpt2.modeling_gpt2.GPT2Model: gpt2_type_to_module_mapping,
     hf_models.gpt2.modeling_gpt2.GPT2LMHeadModel: gpt2_lm_type_to_module_mapping,
@@ -39,9 +37,9 @@ type_to_module_mapping = {
     hf_models.gpt_neo.modeling_gpt_neo.GPTNeoForCausalLM: gpt_neo_lm_type_to_module_mapping,
     hf_models.mistral.modeling_mistral.MistralModel: mistral_type_to_module_mapping,
     hf_models.mistral.modeling_mistral.MistralForCausalLM: mistral_lm_type_to_module_mapping,
+
     # new model type goes here after defining the model files
 }
-
 
 type_to_dimension_mapping = {
     hf_models.gpt2.modeling_gpt2.GPT2Model: gpt2_type_to_dimension_mapping,
@@ -52,9 +50,9 @@ type_to_dimension_mapping = {
     hf_models.gpt_neo.modeling_gpt_neo.GPTNeoForCausalLM: gpt_neo_lm_type_to_dimension_mapping,
     hf_models.mistral.modeling_mistral.MistralModel: mistral_type_to_dimension_mapping,
     hf_models.mistral.modeling_mistral.MistralForCausalLM: mistral_lm_type_to_dimension_mapping,
+
     # new model type goes here after defining the model files
 }
-
 
 output_to_subcomponent_fn_mapping = {
     hf_models.gpt2.modeling_gpt2.GPT2Model: gpt2_output_to_subcomponent,
@@ -67,7 +65,6 @@ output_to_subcomponent_fn_mapping = {
     hf_models.mistral.modeling_mistral.MistralForCausalLM: mistral_output_to_subcomponent,
     # new model type goes here after defining the model files
 }
-
 
 scatter_intervention_output_fn_mapping = {
     hf_models.gpt2.modeling_gpt2.GPT2Model: gpt2_scatter_intervention_output,
@@ -91,7 +88,7 @@ def is_transformer(model):
     """Determine if this is a transformer model"""
     return True
 
-        
+
 def embed_to_distrib(model, embed, log=False, logits=False):
     """Convert an embedding to a distribution over the vocabulary"""
     if "gpt2" in model.config.architectures[0].lower():
@@ -102,8 +99,8 @@ def embed_to_distrib(model, embed, log=False, logits=False):
             return lsm(vocab) if log else sm(vocab)
     elif "llama" in model.config.architectures[0].lower():
         assert False, "Support for LLaMA is not here yet"
-            
-            
+
+
 """
 Above are functions that you need to modify if you add
 a new model arch type in this library.
@@ -111,6 +108,8 @@ a new model arch type in this library.
 We put them in front so it is easier to keep track of
 things that need to be changed.
 """
+
+
 #########################################################################
 
 
@@ -121,6 +120,28 @@ def print_forward_hooks(main_module):
             print(f"Module: {name if name else 'Main Module'}")
             for hook_id, hook in submodule._forward_hooks.items():
                 print(f"  ID: {hook_id}, Hook: {hook}")
+
+        if hasattr(submodule, "_forward_pre_hooks") and submodule._forward_hooks:
+            print(f"Module: {name if name else 'Main Module'}")
+            for hook_id, hook in submodule._forward_pre_hooks.items():
+                print(f"  ID: {hook_id}, Hook: {hook}")
+
+
+def remove_forward_hooks(main_module: nn.Module):
+    """Function to remove all forward and pre-forward hooks from a module and its sub-modules."""
+
+    # Remove forward hooks
+    for _, submodule in main_module.named_modules():
+        if hasattr(submodule, "_forward_hooks"):
+            hooks = list(submodule._forward_hooks.keys())  # Get a list of hook IDs
+            for hook_id in hooks:
+                submodule._forward_hooks.pop(hook_id)
+
+        # Remove pre-forward hooks
+        if hasattr(submodule, "_forward_pre_hooks"):
+            pre_hooks = list(submodule._forward_pre_hooks.keys())  # Get a list of pre-hook IDs
+            for pre_hook_id in pre_hooks:
+                submodule._forward_pre_hooks.pop(pre_hook_id)
 
 
 def set_seed(seed: int):
@@ -139,11 +160,12 @@ def sigmoid_boundary(_input, boundary_x, boundary_y, temperature):
 
 def harmonic_sigmoid_boundary(_input, boundary_x, boundary_y, temperature):
     """Generate harmonic sigmoid mask"""
-    return (_input<=boundary_x)*torch.sigmoid((_input - boundary_x) / temperature) + \
-    (_input>=boundary_y)*torch.sigmoid((boundary_y - _input) / temperature) + \
-    ((_input>boundary_x)&(_input<boundary_y))*torch.sigmoid(
-        (0.5 * (torch.abs(_input - boundary_x)**(-1) + torch.abs(_input - boundary_y)**(-1)))**(-1) / temperature
-    )
+    return (_input <= boundary_x) * torch.sigmoid((_input - boundary_x) / temperature) + \
+        (_input >= boundary_y) * torch.sigmoid((boundary_y - _input) / temperature) + \
+        ((_input > boundary_x) & (_input < boundary_y)) * torch.sigmoid(
+            (0.5 * (torch.abs(_input - boundary_x) ** (-1) + torch.abs(_input - boundary_y) ** (-1))) ** (
+                -1) / temperature
+        )
 
 
 def count_parameters(model):
@@ -156,7 +178,7 @@ def random_permutation_matrix(n):
     P = torch.eye(n)
     perm = torch.randperm(n)
     P = P[perm]
-    
+
     return P
 
 
@@ -180,11 +202,11 @@ def top_vals(tokenizer, res, n=10):
     for i in range(len(top_values)):
         tok = format_token(tokenizer, top_indices[i].item())
         print(f"{tok:<20} {top_values[i].item()}")
-        
+
 
 def getattr_for_torch_module(
-    model,
-    parameter_name
+        model,
+        parameter_name
 ):
     """Recursively fetch the model based on the name"""
     current_module = model
@@ -196,10 +218,10 @@ def getattr_for_torch_module(
         else:
             current_module = getattr(current_module, param)
     return current_module
-    
+
 
 def get_alignable_dimension(
-    model, representation
+        model, representation
 ) -> int:
     """Based on the representation, get the aligning dimension size"""
     dimension_proposals = type_to_dimension_mapping[
@@ -235,7 +257,7 @@ def get_alignable_dimension(
 
 
 def get_alignable_module_hook(
-    model, representation
+        model, representation
 ) -> nn.Module:
     """Render the intervening module with a hook"""
     type_info = type_to_module_mapping[
@@ -248,19 +270,19 @@ def get_alignable_module_hook(
     if "%s" in parameter_name:
         # we assume it is for the layer.
         parameter_name = parameter_name % (representation.alignable_layer)
-        
+
     module = getattr_for_torch_module(
         model,
         parameter_name
     )
     module_hook = getattr(module, hook_type)
-    
+
     return module_hook
 
 
 def sort_alignables_by_topological_order(
-    model,
-    alignable_representations
+        model,
+        alignable_representations
 ):
     """Sort the intervention with topology in transformer arch"""
     if is_transformer(model):
@@ -268,60 +290,61 @@ def sort_alignables_by_topological_order(
         for k, _ in alignable_representations.items():
             l = int(k.split('.')[1]) + 1
             r = CONST_TRANSFORMER_TOPOLOGICAL_ORDER.index(k.split('.')[3])
-            scores[k] = l*r
+            scores[k] = l * r
         sorted_keys = sorted(scores.keys(), key=lambda x: scores[x])
         return sorted_keys
     assert False
-    
+
 
 class HandlerList():
     """General class to set hooks and set off hooks"""
+
     def __init__(self, handlers):
         self.handlers = handlers
 
     def remove(self):
         for handler in self.handlers:
             handler.remove()
-    
+
     def extend(
-        self, 
-        new_handlers
+            self,
+            new_handlers
     ):
         self.handlers.extend(new_handlers.handlers)
         return self
 
 
 def gather_neurons(
-    tensor_input,
-    alignable_unit,
-    unit_locations
+        tensor_input,
+        alignable_unit,
+        unit_locations
 ):
     """Gather intervening neurons"""
     if alignable_unit in {"pos", "h"}:
         assert tensor_input.shape[0] == \
-                unit_locations.shape[0]
-        
+               unit_locations.shape[0]
+
         tensor_output = torch.gather(
-            tensor_input, 1, 
+            tensor_input, 1,
             unit_locations.reshape(
-                *unit_locations.shape, 
-                *(1,)*(len(tensor_input.shape)-2)
+                *unit_locations.shape,
+                *(1,) * (len(tensor_input.shape) - 2)
             ).expand(
                 -1, -1, *tensor_input.shape[2:]
             )
         )
-        
+
         return tensor_output
     else:
         assert False, f"Not Implemented Gathering with Unit = {alignable_unit}"
 
-        
+
 def bsd_to_b_sd(tensor):
     """
     Convert a tensor of shape (b, s, d) to (b, s*d).
     """
     b, s, d = tensor.shape
-    return tensor.reshape(b, s*d)
+    return tensor.reshape(b, s * d)
 
 
 def b_sd_to_bsd(tensor, d):
@@ -338,7 +361,7 @@ def bhsd_to_bs_hd(tensor):
     Convert a tensor of shape (b, h, s, d) to (b, s, h*d).
     """
     b, h, s, d = tensor.shape
-    return tensor.permute(0, 2, 1, 3).reshape(b, s, h*d)
+    return tensor.permute(0, 2, 1, 3).reshape(b, s, h * d)
 
 
 def bs_hd_to_bhsd(tensor, d):
@@ -349,11 +372,11 @@ def bs_hd_to_bhsd(tensor, d):
     h = hd // d
     return tensor.reshape(b, s, h, d).permute(0, 2, 1, 3)
 
-       
+
 def do_intervention(
-    base_representation,
-    source_representation,
-    intervention
+        base_representation,
+        source_representation,
+        intervention
 ):
     """Do the actual intervention"""
     d = base_representation.shape[-1]
@@ -382,20 +405,19 @@ def do_intervention(
 
 
 def simple_output_to_subcomponent(
-    output, alignable_representation_type, model_config
+        output, alignable_representation_type, model_config
 ):
     """This is an oversimplied version for demo"""
     return output
 
 
 def simple_scatter_intervention_output(
-    original_output, intervened_representation,
-    alignable_representation_type,
-    unit_locations, model_config
+        original_output, intervened_representation,
+        alignable_representation_type,
+        unit_locations, model_config
 ):
     """This is an oversimplied version for demo"""
     for batch_i, locations in enumerate(unit_locations):
         original_output[
             batch_i, locations
         ] = intervened_representation[batch_i]
-
