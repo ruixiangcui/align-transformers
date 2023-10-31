@@ -125,7 +125,6 @@ def print_forward_hooks(main_module):
             print(f"Module: {name if name else 'Main Module'}")
             for hook_id, hook in submodule._forward_pre_hooks.items():
                 print(f"  ID: {hook_id}, Hook: {hook}")
-<<<<<<< HEAD
 
 
 def remove_forward_hooks(main_module: nn.Module):
@@ -143,10 +142,6 @@ def remove_forward_hooks(main_module: nn.Module):
             pre_hooks = list(submodule._forward_pre_hooks.keys())  # Get a list of pre-hook IDs
             for pre_hook_id in pre_hooks:
                 submodule._forward_pre_hooks.pop(pre_hook_id)
-
-=======
-                
->>>>>>> origin/main
 
 def remove_forward_hooks(main_module: nn.Module):
     """Function to remove all forward and pre-forward hooks from a module and its sub-modules."""
