@@ -156,7 +156,7 @@ mistral.config.num_hidden_layers
 # In[28]:
 
 
-def remove_forward_hooks(main_module: nn.Module):
+def remove_forward_hooks(main_module: torch.nn.Module):
     """Function to remove all forward and pre-forward hooks from a module and its sub-modules."""
     # Remove forward hooks
     for _, submodule in main_module.named_modules():
@@ -247,6 +247,8 @@ df['layer'] = pd.Categorical(df['layer'], categories=nodes[::-1], ordered=True)
 g = (ggplot(df) + geom_tile(aes(x='pos', y='layer', fill='prob', color='prob')) +
      facet_wrap("~token") + theme(axis_text_x=element_text(rotation=90)))
 print(g)
+g.save("mistral_1.pdf", width=10, height=10)
+print("mistral_1 PDF saved.")
 
 
 # In[13]:
@@ -259,8 +261,8 @@ g = (ggplot(filtered) + geom_bar(aes(x='layer', y='prob', fill='token'), stat='i
          + facet_wrap("~token", ncol=1))
 # save as pdf
 print(g)
-g.save("mistral.pdf", width=10, height=10)
-print("PDF saved.")
+g.save("mistral_2.pdf", width=10, height=10)
+print("mistral_2 PDF saved.")
 
 
 # In[ ]:
