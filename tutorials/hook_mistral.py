@@ -26,11 +26,8 @@ try:
     # need to be done.
     import transformers
     import sys
-    from IPython import get_ipython
     sys.path.append("align-transformers/")
 except ModuleNotFoundError:
-    get_ipython().system('git clone https://github.com/frankaging/align-transformers.git')
-    get_ipython().system('pip install -r align-transformers/requirements.txt')
     import sys
     sys.path.append("align-transformers/")
 
@@ -52,7 +49,6 @@ from models.utils import lsm, sm, top_vals, format_token, type_to_module_mapping
     scatter_intervention_output_fn_mapping, simple_output_to_subcomponent, \
     simple_scatter_intervention_output
 
-get_ipython().run_line_magic('config', "InlineBackend.figure_formats = ['svg']")
 from plotnine import ggplot, geom_tile, aes, facet_wrap, theme, element_text, \
                      geom_bar, geom_hline, scale_y_log10
 
