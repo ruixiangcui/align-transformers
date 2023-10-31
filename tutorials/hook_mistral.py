@@ -26,6 +26,7 @@ try:
     # need to be done.
     import transformers
     import sys
+    from IPython import get_ipython
     sys.path.append("align-transformers/")
 except ModuleNotFoundError:
     get_ipython().system('git clone https://github.com/frankaging/align-transformers.git')
