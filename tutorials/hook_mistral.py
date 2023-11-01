@@ -1,26 +1,5 @@
 #!/usr/bin/env python
 # coding: utf-8
-
-# ## Tutorial of using Mistral with this library
-
-# [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/frankaging/align-transformers/blob/main/tutorials/Hook%20with%20new%20model%20and%20intervention%20types.ipynb)
-
-# In[1]:
-
-
-__author__ = "Zhengxuan Wu and Ruixiang Cui"
-__version__ = "10/05/2023"
-
-
-# ### Overview
-# 
-# This library only supports a set of library as a priori. We allow users to add new model architectures to do intervention-based alignment training, and static path patching analyses. This tutorial shows how to deal with new model type that is not pre-defined in this library.
-# 
-# **Note that this tutorial will not add this new model type to our codebase. Feel free to open a PR to do that!**
-
-# In[4]:
-
-
 try:
     # This library is our indicator that the required installs
     # need to be done.
@@ -53,19 +32,16 @@ from plotnine import ggplot, geom_tile, aes, facet_wrap, theme, element_text, \
                      geom_bar, geom_hline, scale_y_log10
 
 
-# ### Try on new model type Mistral
-
 # In[3]:
 
 
-def create_mistral(name="mistralai/Mistral-7B-Instruct-v0.1", cache_dir="../../.huggingface_cache"):
+def create_mistral(name="Open-Orca/Mistral-7B-OpenOrca", cache_dir="../../.huggingface_cache"):
     """Creates a mistral model, config, and tokenizer from the given name and revision"""
     from transformers import MistralForCausalLM, AutoTokenizer, MistralConfig
     
     config = MistralConfig.from_pretrained(name)
     tokenizer = AutoTokenizer.from_pretrained(name)
     mistral = MistralForCausalLM.from_pretrained(name, config=config, cache_dir=cache_dir)
-    mistral.bfloat16()
     print("loaded model")
     return config, tokenizer, mistral
 
@@ -78,9 +54,6 @@ def embed_to_distrib_mistral(embed, log=False, logits=False):
         return lsm(vocab) if log else sm(vocab)
 
 config, tokenizer, mistral = create_mistral()
-
-
-# In[38]:
 
 
 base = "The capital of Spain is"
@@ -98,30 +71,6 @@ print(source)
 res = mistral(**inputs[1])
 distrib = embed_to_distrib_mistral(res.logits, logits=False)
 top_vals(tokenizer, distrib[0][-1], n=10)
-
-
-# ### To add mistral, you only need the following block
-
-# In[4]:
-
-
-# """Only define for the block output here for simplicity"""
-# type_to_module_mapping[type(mistral)] = {
-#     "mlp_output": ("encoder.block[%s].layer[1]", CONST_OUTPUT_HOOK),
-#     "attention_input": ("encoder.block[%s].layer[0]", CONST_OUTPUT_HOOK),
-# }
-# type_to_dimension_mapping[type(mistral)] = {
-#     "mlp_output": ("config.d_model", ),
-#     "attention_input": ("config.d_model", ),
-# }
-# output_to_subcomponent_fn_mapping[type(mistral)] = simple_output_to_subcomponent           # no special subcomponent
-# scatter_intervention_output_fn_mapping[type(mistral)] = simple_scatter_intervention_output # no special scattering
-
-
-# ### Path patching with mistral
-
-# In[4]:
-
 
 print(mistral.config)
 
@@ -153,9 +102,6 @@ sources = [tokenizer("The capital of Italy is", return_tensors="pt")]
 mistral.config.num_hidden_layers
 
 
-# In[28]:
-
-
 def remove_forward_hooks(main_module: torch.nn.Module):
     """Function to remove all forward and pre-forward hooks from a module and its sub-modules."""
     # Remove forward hooks
@@ -173,10 +119,6 @@ def remove_forward_hooks(main_module: torch.nn.Module):
 
 remove_forward_hooks(mistral)
 
-
-# In[ ]:
-
-
 # should finish within 1 min with a standard 12G GPU
 tokens = tokenizer.encode("Madrid Rome")[:2]
 
@@ -186,8 +128,6 @@ for layer_i in range(mistral.config.num_hidden_layers):
     alignable_config = simple_position_config(type(mistral), "mlp_output", layer_i)
     alignable = AlignableModel(alignable_config, mistral)
     for pos_i in range(len(base.input_ids[0])):
-        # print(base)
-        # print(sources)
         _, counterfactual_outputs = alignable(
             base,
             sources,
